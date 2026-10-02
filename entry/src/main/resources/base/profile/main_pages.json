@@ -1,0 +1,10 @@
+{
+  "src": [
+    "pages/Index",
+    "pages/Login",
+    "pages/Home",
+    "pages/MedicineList",
+    "pages/MedicineAdd",
+    "pages/PlanAdd"
+  ]
+}
