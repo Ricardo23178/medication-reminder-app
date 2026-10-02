@@ -5,6 +5,7 @@
     "pages/Home",
     "pages/MedicineList",
     "pages/MedicineAdd",
-    "pages/PlanAdd"
+    "pages/PlanAdd",
+    "pages/PlanList"
   ]
 }

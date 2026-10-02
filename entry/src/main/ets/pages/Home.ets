@@ -248,6 +248,16 @@ struct Home {
         .padding({ left: 16, right: 16 })
         .scrollBar(BarState.Off)
       }
+
+      Text('我的计划')
+        .fontSize(15)
+        .fontColor('#0a59f7')
+        .padding({ left: 12, right: 12, top: 8, bottom: 8 })
+        .backgroundColor('#e8f1ff')
+        .borderRadius(16)
+        .onClick(() => {
+          router.pushUrl({ url: 'pages/PlanList' });
+        })
     }
     .width('100%')
     .height('100%')

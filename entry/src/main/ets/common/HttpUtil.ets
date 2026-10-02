@@ -98,4 +98,11 @@ export class HttpUtil {
   static post(path: string, body?: Object, needAuth: boolean = true): Promise<string> {
     return HttpUtil.request(http.RequestMethod.POST, path, body, needAuth);
   }
+
+  /**
+   * 快捷方法：DELETE
+   */
+  static delete(path: string, needAuth: boolean = true): Promise<string> {
+    return HttpUtil.request(http.RequestMethod.DELETE, path, undefined, needAuth);
+  }
 }
