@@ -17,6 +17,18 @@ export class LoginRequest {
 }
 
 /**
+ * 注册请求体。字段对齐后端 RegisterRequest。
+ * account: 4-32 位字母/数字/下划线；password: 6-32 位；phone 可选。
+ */
+export class RegisterRequest {
+  account: string = '';
+  password: string = '';
+  confirmPassword: string = '';
+  nickname: string = '';
+  phone: string = '';
+}
+
+/**
  * 确认服药请求体。action: TAKEN已服 / DELAYED稍后 / SKIPPED跳过。
  * 先只做 TAKEN，其余字段留空即可。
  */
