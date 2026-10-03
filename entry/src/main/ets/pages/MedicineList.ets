@@ -3,19 +3,28 @@ import { router } from '@kit.ArkUI';
 import { HttpUtil } from '../common/HttpUtil';
 import { Medicine, parseMedicineListResult } from '../model/Medicine';
 
-@Entry
+/**
+ * 「药品」Tab 页：药品列表 + 添加入口。
+ * 已改成 @Component（不再 @Entry），由 Main 的 Tabs 承载。
+ */
 @Component
-struct MedicineList {
+export struct MedicineListPage {
+  @Prop currentTab: number = 1;
+  @Prop @Watch('onRefresh') refreshTick: number = 0;
   @State medicineList: Medicine[] = [];
   @State loading: boolean = true;
 
+  async aboutToAppear() {
+    await this.loadList();
+  }
+
   /**
-   * 每次页面显示时都刷新（含首次进入、从新增页返回），保证列表是最新数据。
-   * 注意：用 onPageShow 而不是 aboutToAppear，因为 aboutToAppear 只在首次进入触发，
-   * 从新增页 router.back() 回来不会重新执行。
+   * refreshTick 变化（切到本 Tab 或从新增页返回）时刷新。
    */
-  onPageShow() {
-    this.loadList();
+  onRefresh() {
+    if (this.currentTab === 1) {
+      this.loadList();
+    }
   }
 
   /**
@@ -26,7 +35,6 @@ struct MedicineList {
       const respStr = await HttpUtil.get('/api/medicines');
       const result = parseMedicineListResult(respStr);
       if (result.code === 200) {
-        // slice() 换新引用，强制 ForEach 重渲染（今日提醒踩过的坑）
         this.medicineList = result.data.slice();
       } else {
         promptAction.showToast({ message: result.message });

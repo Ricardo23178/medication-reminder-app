@@ -7,9 +7,9 @@ import { RemindTaskVO, parseRemindList, parseSimpleResult } from '../model/Remin
 import { ConfirmRequest } from '../model/Request';
 
 /**
- * 单条提醒卡片。用 @ObjectLink 接收 RemindTaskVO，
- * 配合模型类的 @Observed，当 confirmed 等字段变化时能自动刷新这一项。
+ * 单条提醒卡片（内部子组件，不导出）。
  */
+
 @Component
 struct RemindItem {
   @ObjectLink task: RemindTaskVO;
@@ -91,18 +91,21 @@ struct RemindItem {
 }
 
 /**
- * 首页：今日服药提醒列表。
+ * 「今日」Tab 页：今日服药提醒列表。
+ * 已改成 @Component（不再 @Entry），由 Main 的 Tabs 承载。
+ * currentTab / refreshTick 由 Main 传入：切到本 Tab 或从二级页返回时自动刷新。
  */
-@Entry
 @Component
-struct Home {
+export struct HomePage {
+  @Prop currentTab: number = 0;
+  @Prop @Watch('onRefresh') refreshTick: number = 0;
   @State nickname: string = '用户';
   @State remindList: RemindTaskVO[] = [];
   @State loading: boolean = true;
   @State refreshVersion: number = 0;   // 确认后自增，强制 ForEach 重建
 
   async aboutToAppear() {
-    // 读昵称（只在首次进入读一次即可）
+    // 读昵称（只在首次读一次）
     try {
       const prefs = await preferences.getPreferences(getContext(), 'medication');
       const name = await prefs.get(Constants.KEY_NICKNAME, '用户') as string;
@@ -112,13 +115,17 @@ struct Home {
     } catch (e) {
       this.nickname = '用户';
     }
+    // 首次加载
+    await this.loadToday();
   }
 
   /**
-   * 每次页面显示都刷新提醒列表（含首次进入、从建计划/药品管理返回）。
+   * refreshTick 变化（切到本 Tab 或从二级页返回）时刷新。
    */
-  onPageShow() {
-    this.loadToday();
+  onRefresh() {
+    if (this.currentTab === 0) {
+      this.loadToday();
+    }
   }
 
   /**
@@ -129,9 +136,7 @@ struct Home {
       const respStr = await HttpUtil.get('/api/reminders/today');
       const result = parseRemindList(respStr);
       if (result.code === 200) {
-        // 用 slice() 包一层，生成全新数组引用
         this.remindList = result.data.slice();
-        // 自增刷新版本，强制 ForEach 重建所有项
         this.refreshVersion++;
       } else {
         promptAction.showToast({ message: result.message });
@@ -153,7 +158,6 @@ struct Home {
       const result = parseSimpleResult(respStr);
       if (result.code === 200) {
         promptAction.showToast({ message: '已确认服药' });
-        // 确认成功后重新拉列表，拿后端最新 confirmed 状态
         await this.loadToday();
       } else {
         promptAction.showToast({ message: result.message });
@@ -163,25 +167,9 @@ struct Home {
     }
   }
 
-  /**
-   * 退出登录：清空本地 token/昵称/userId，回登录页。
-   */
-  async logout() {
-    try {
-      const prefs = await preferences.getPreferences(getContext(), 'medication');
-      await prefs.delete(Constants.KEY_TOKEN);
-      await prefs.delete(Constants.KEY_NICKNAME);
-      await prefs.delete(Constants.KEY_USER_ID);
-      await prefs.flush();
-    } catch (e) {
-      // 忽略，直接跳登录页
-    }
-    router.replaceUrl({ url: 'pages/Login' });
-  }
-
   build() {
     Column() {
-      // 顶部标题 + 入口按钮
+      // 标题区
       Row() {
         Column() {
           Text('今日提醒')
@@ -195,27 +183,15 @@ struct Home {
         .alignItems(HorizontalAlign.Start)
         .layoutWeight(1)
 
-        Row({ space: 10 }) {
-          Text('药品管理')
-            .fontSize(15)
-            .fontColor('#0a59f7')
-            .padding({ left: 12, right: 12, top: 8, bottom: 8 })
-            .backgroundColor('#e8f1ff')
-            .borderRadius(16)
-            .onClick(() => {
-              router.pushUrl({ url: 'pages/MedicineList' });
-            })
-
-          Text('建计划')
-            .fontSize(15)
-            .fontColor('#0a59f7')
-            .padding({ left: 12, right: 12, top: 8, bottom: 8 })
-            .backgroundColor('#e8f1ff')
-            .borderRadius(16)
-            .onClick(() => {
-              router.pushUrl({ url: 'pages/PlanAdd' });
-            })
-        }
+        Text('统计')
+          .fontSize(14)
+          .fontColor('#0a59f7')
+          .padding({ left: 12, right: 12, top: 6, bottom: 6 })
+          .backgroundColor('#e8f1ff')
+          .borderRadius(16)
+          .onClick(() => {
+            router.pushUrl({ url: 'pages/Statistics' });
+          })
       }
       .width('100%')
       .padding({ left: 16, right: 16 })
@@ -242,7 +218,7 @@ struct Home {
           Text('今天没有服药提醒')
             .fontSize(16)
             .fontColor('#999999')
-          Text('先添加药品和用药计划吧')
+          Text('去「药品」和「计划」页添加吧')
             .fontSize(13)
             .fontColor('#bbbbbb')
             .margin({ top: 8 })
@@ -264,38 +240,6 @@ struct Home {
         .padding({ left: 16, right: 16 })
         .scrollBar(BarState.Off)
       }
-
-      Row({ space: 12 }) {
-        Text('我的计划')
-          .fontSize(15)
-          .fontColor('#0a59f7')
-          .padding({ left: 12, right: 12, top: 8, bottom: 8 })
-          .backgroundColor('#e8f1ff')
-          .borderRadius(16)
-          .onClick(() => {
-            router.pushUrl({ url: 'pages/PlanList' });
-          })
-
-        Text('家属协同')
-          .fontSize(15)
-          .fontColor('#0a59f7')
-          .padding({ left: 12, right: 12, top: 8, bottom: 8 })
-          .backgroundColor('#e8f1ff')
-          .borderRadius(16)
-          .onClick(() => {
-            router.pushUrl({ url: 'pages/FamilyList' });
-          })
-      }
-      .margin({ bottom: 12 })
-
-      Text('退出登录')
-        .fontSize(13)
-        .fontColor('#999999')
-        .padding({ left: 12, right: 12, top: 8, bottom: 8 })
-        .onClick(() => {
-          this.logout();
-        })
-        .margin({ bottom: 20 })
     }
     .width('100%')
     .height('100%')

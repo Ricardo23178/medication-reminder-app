@@ -2,12 +2,11 @@
   "src": [
     "pages/Index",
     "pages/Login",
-    "pages/Home",
-    "pages/MedicineList",
+    "pages/Register",
+    "pages/Main",
     "pages/MedicineAdd",
     "pages/PlanAdd",
-    "pages/PlanList",
-    "pages/FamilyList",
-    "pages/FamilyAbnormal"
+    "pages/FamilyAbnormal",
+    "pages/Statistics"
   ]
 }

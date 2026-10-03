@@ -11,9 +11,10 @@ import { InviteRequest, AcceptInviteRequest } from '../model/Request';
  * 方向约定：owner = 被照护方（发起邀请），family = 家属（凭码接受）。
  * 同一个账号既可能是 owner 也可能是 family，页面按当前用户 id 判断视角渲染。
  */
-@Entry
 @Component
-struct FamilyList {
+export struct FamilyListPage {
+  @Prop currentTab: number = 3;
+  @Prop @Watch('onRefresh') refreshTick: number = 0;
   @State relationList: FamilyRelationVO[] = [];
   @State loading: boolean = true;
   @State refreshVersion: number = 0;
@@ -36,10 +37,16 @@ struct FamilyList {
     } catch (e) {
       this.myUserId = 0;
     }
+    await this.loadList();
   }
 
-  onPageShow() {
-    this.loadList();
+  /**
+   * refreshTick 变化（切到本 Tab 或从异常页返回）时刷新。
+   */
+  onRefresh() {
+    if (this.currentTab === 3) {
+      this.loadList();
+    }
   }
 
   /**

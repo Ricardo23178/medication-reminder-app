@@ -37,7 +37,7 @@ struct Login {
         await prefs.flush();
 
         promptAction.showToast({ message: '登录成功' });
-        router.replaceUrl({ url: 'pages/Home' });
+        router.replaceUrl({ url: 'pages/Main' });
       } else {
         promptAction.showToast({ message: resp.message });
       }
@@ -87,11 +87,14 @@ struct Login {
           this.doLogin();
         })
 
-      // 注册入口（先占位，后续接注册页）
+      // 注册入口
       Text('还没有账号？去注册')
         .fontSize(14)
         .fontColor('#0a59f7')
         .margin({ top: 20 })
+        .onClick(() => {
+          router.pushUrl({ url: 'pages/Register' });
+        })
     }
     .width('100%')
     .height('100%')

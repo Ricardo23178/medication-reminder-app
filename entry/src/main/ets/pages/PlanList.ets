@@ -1,18 +1,32 @@
 import { promptAction } from '@kit.ArkUI';
+import { router } from '@kit.ArkUI';
 import { HttpUtil } from '../common/HttpUtil';
 import { PlanVO, parsePlanList } from '../model/Plan';
 import { parseSimpleResult } from '../model/RemindTask';
 
-@Entry
+/**
+ * 「计划」Tab 页：计划列表 + 建计划入口。
+ * 已改成 @Component（不再 @Entry），由 Main 的 Tabs 承载。
+ */
 @Component
-struct PlanList {
+export struct PlanListPage {
+  @Prop currentTab: number = 2;
+  @Prop @Watch('onRefresh') refreshTick: number = 0;
   @State planList: PlanVO[] = [];
   @State loading: boolean = true;
-  // 刷新版本号：操作成功后 +1，让 ForEach 的 key 变化，强制重建列表
   @State refreshVersion: number = 0;
 
-  onPageShow() {
-    this.loadList();
+  async aboutToAppear() {
+    await this.loadList();
+  }
+
+  /**
+   * refreshTick 变化（切到本 Tab 或从建计划页返回）时刷新。
+   */
+  onRefresh() {
+    if (this.currentTab === 2) {
+      this.loadList();
+    }
   }
 
   /**
@@ -123,7 +137,6 @@ struct PlanList {
     }
   }
 
-
   build() {
     Column() {
       Text('我的计划')
@@ -146,6 +159,10 @@ struct PlanList {
           Text('还没有用药计划')
             .fontSize(16)
             .fontColor('#999999')
+          Text('点击下方按钮创建')
+            .fontSize(13)
+            .fontColor('#bbbbbb')
+            .margin({ top: 8 })
         }
         .width('100%')
         .layoutWeight(1)
@@ -217,6 +234,16 @@ struct PlanList {
         .padding({ left: 16, right: 16 })
         .scrollBar(BarState.Off)
       }
+
+      // 底部「建计划」按钮
+      Button('+ 建计划')
+        .width('90%')
+        .height(50)
+        .margin({ bottom: 20 })
+        .backgroundColor('#0a59f7')
+        .onClick(() => {
+          router.pushUrl({ url: 'pages/PlanAdd' });
+        })
     }
     .width('100%')
     .height('100%')
