@@ -6,6 +6,8 @@
     "pages/MedicineList",
     "pages/MedicineAdd",
     "pages/PlanAdd",
-    "pages/PlanList"
+    "pages/PlanList",
+    "pages/FamilyList",
+    "pages/FamilyAbnormal"
   ]
 }

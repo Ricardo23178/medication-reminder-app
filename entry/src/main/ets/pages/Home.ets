@@ -163,6 +163,22 @@ struct Home {
     }
   }
 
+  /**
+   * 退出登录：清空本地 token/昵称/userId，回登录页。
+   */
+  async logout() {
+    try {
+      const prefs = await preferences.getPreferences(getContext(), 'medication');
+      await prefs.delete(Constants.KEY_TOKEN);
+      await prefs.delete(Constants.KEY_NICKNAME);
+      await prefs.delete(Constants.KEY_USER_ID);
+      await prefs.flush();
+    } catch (e) {
+      // 忽略，直接跳登录页
+    }
+    router.replaceUrl({ url: 'pages/Login' });
+  }
+
   build() {
     Column() {
       // 顶部标题 + 入口按钮
@@ -249,15 +265,37 @@ struct Home {
         .scrollBar(BarState.Off)
       }
 
-      Text('我的计划')
-        .fontSize(15)
-        .fontColor('#0a59f7')
+      Row({ space: 12 }) {
+        Text('我的计划')
+          .fontSize(15)
+          .fontColor('#0a59f7')
+          .padding({ left: 12, right: 12, top: 8, bottom: 8 })
+          .backgroundColor('#e8f1ff')
+          .borderRadius(16)
+          .onClick(() => {
+            router.pushUrl({ url: 'pages/PlanList' });
+          })
+
+        Text('家属协同')
+          .fontSize(15)
+          .fontColor('#0a59f7')
+          .padding({ left: 12, right: 12, top: 8, bottom: 8 })
+          .backgroundColor('#e8f1ff')
+          .borderRadius(16)
+          .onClick(() => {
+            router.pushUrl({ url: 'pages/FamilyList' });
+          })
+      }
+      .margin({ bottom: 12 })
+
+      Text('退出登录')
+        .fontSize(13)
+        .fontColor('#999999')
         .padding({ left: 12, right: 12, top: 8, bottom: 8 })
-        .backgroundColor('#e8f1ff')
-        .borderRadius(16)
         .onClick(() => {
-          router.pushUrl({ url: 'pages/PlanList' });
+          this.logout();
         })
+        .margin({ bottom: 20 })
     }
     .width('100%')
     .height('100%')

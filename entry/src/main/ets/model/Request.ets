@@ -51,3 +51,23 @@ export class PlanRequest {
   remindTimes: string[] = [];
 }
 
+/**
+ * 发起家属绑定邀请请求体。字段对齐后端 InviteRequest。
+ * relationType 称谓可选（父/母/子女/配偶），scope 授权范围可选。
+ */
+export class InviteRequest {
+  relationType: string = '';
+  scope: string = '';
+}
+
+/**
+ * 接受家属绑定邀请请求体。字段对齐后端 AcceptInviteRequest。
+ */
+export class AcceptInviteRequest {
+  inviteCode: string = '';
+
+  constructor(inviteCode: string) {
+    this.inviteCode = inviteCode;
+  }
+}
+
