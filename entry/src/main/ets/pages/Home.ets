@@ -8,12 +8,13 @@ import { ConfirmRequest } from '../model/Request';
 
 /**
  * 单条提醒卡片（内部子组件，不导出）。
+ * 适老化设计：时间、药名大字号，确认按钮做大（高 56、字 18），
+ * 三个动作「已服用 / 稍后 / 跳过」直接平铺，减少操作步骤。
  */
-
 @Component
 struct RemindItem {
   @ObjectLink task: RemindTaskVO;
-  onConfirm: () => void = () => {};
+  onAction: (action: string) => void = () => {};
 
   /**
    * 把 "2026-10-02T08:00:00" 截成 "08:00"。
@@ -36,55 +37,96 @@ struct RemindItem {
     return '';
   }
 
+  /**
+   * 已确认后的动作转中文。
+   */
+  actionText(action: string): string {
+    if (action === 'TAKEN') return '已服用';
+    if (action === 'DELAYED') return '已稍后';
+    if (action === 'SKIPPED') return '已跳过';
+    return '已确认';
+  }
+
   build() {
-    Row() {
-      // 左侧：时间
-      Column() {
-        Text(this.formatTime(this.task.scheduledAt))
-          .fontSize(22)
-          .fontWeight(FontWeight.Bold)
-          .fontColor(this.task.confirmed ? '#999999' : '#333333')
-        Text(this.mealText(this.task.mealRelation))
-          .fontSize(12)
-          .fontColor('#999999')
-          .margin({ top: 4 })
-      }
-      .width(70)
-      .alignItems(HorizontalAlign.Start)
+    Column() {
+      // 上部分：时间 + 药品信息
+      Row() {
+        // 左侧：时间
+        Column() {
+          Text(this.formatTime(this.task.scheduledAt))
+            .fontSize(26)
+            .fontWeight(FontWeight.Bold)
+            .fontColor(this.task.confirmed ? '#999999' : '#333333')
+          Text(this.mealText(this.task.mealRelation))
+            .fontSize(14)
+            .fontColor('#999999')
+            .margin({ top: 4 })
+        }
+        .width(80)
+        .alignItems(HorizontalAlign.Start)
 
-      // 中间：药品信息
-      Column() {
-        Text(this.task.medicineName)
-          .fontSize(17)
-          .fontWeight(FontWeight.Medium)
-          .fontColor(this.task.confirmed ? '#999999' : '#333333')
-        Text('剂量 ' + this.task.dosagePerTime + ' ' + this.task.dosageUnit)
-          .fontSize(13)
-          .fontColor('#999999')
-          .margin({ top: 4 })
+        // 中间：药品信息
+        Column() {
+          Text(this.task.medicineName)
+            .fontSize(22)
+            .fontWeight(FontWeight.Medium)
+            .fontColor(this.task.confirmed ? '#999999' : '#333333')
+          Text('剂量 ' + this.task.dosagePerTime + ' ' + this.task.dosageUnit)
+            .fontSize(16)
+            .fontColor('#666666')
+            .margin({ top: 6 })
+        }
+        .alignItems(HorizontalAlign.Start)
+        .layoutWeight(1)
+        .margin({ left: 12 })
       }
-      .alignItems(HorizontalAlign.Start)
-      .layoutWeight(1)
-      .margin({ left: 12 })
+      .width('100%')
 
-      // 右侧：确认按钮
+      // 下部分：三个大按钮 或 已确认状态
       if (this.task.confirmed) {
-        Text('已服用')
-          .fontSize(14)
-          .fontColor('#999999')
-          .padding({ left: 14, right: 14, top: 8, bottom: 8 })
+        Row() {
+          Text(this.actionText(this.task.action))
+            .fontSize(18)
+            .fontColor('#999999')
+        }
+        .width('100%')
+        .justifyContent(FlexAlign.Center)
+        .margin({ top: 14 })
       } else {
-        Button('确认服药')
-          .fontSize(14)
-          .height(36)
-          .backgroundColor('#0a59f7')
-          .onClick(() => {
-            this.onConfirm();
-          })
+        Row({ space: 12 }) {
+          Button('已服用')
+            .fontSize(18)
+            .height(56)
+            .layoutWeight(1)
+            .backgroundColor('#34c759')
+            .onClick(() => {
+              this.onAction('TAKEN');
+            })
+
+          Button('稍后')
+            .fontSize(18)
+            .height(56)
+            .layoutWeight(1)
+            .backgroundColor('#ff9500')
+            .onClick(() => {
+              this.onAction('DELAYED');
+            })
+
+          Button('跳过')
+            .fontSize(18)
+            .height(56)
+            .layoutWeight(1)
+            .backgroundColor('#8e8e93')
+            .onClick(() => {
+              this.onAction('SKIPPED');
+            })
+        }
+        .width('100%')
+        .margin({ top: 14 })
       }
     }
     .width('100%')
-    .padding({ left: 16, right: 16, top: 16, bottom: 16 })
+    .padding({ left: 16, right: 16, top: 18, bottom: 18 })
     .backgroundColor(this.task.confirmed ? '#f5f5f5' : '#ffffff')
     .borderRadius(12)
   }
@@ -149,21 +191,28 @@ export struct HomePage {
   }
 
   /**
-   * 确认服药。
+   * 确认服药（已服/稍后/跳过）。
+   * @param action TAKEN / DELAYED / SKIPPED
    */
-  async confirmTake(task: RemindTaskVO) {
+  async confirmTake(task: RemindTaskVO, action: string) {
     try {
-      const req = new ConfirmRequest('TAKEN');
+      const req = new ConfirmRequest(action);
       const respStr = await HttpUtil.post('/api/reminders/' + task.id + '/confirm', req);
       const result = parseSimpleResult(respStr);
       if (result.code === 200) {
-        promptAction.showToast({ message: '已确认服药' });
+        if (action === 'TAKEN') {
+          promptAction.showToast({ message: '已确认服药' });
+        } else if (action === 'DELAYED') {
+          promptAction.showToast({ message: '已设为稍后' });
+        } else if (action === 'SKIPPED') {
+          promptAction.showToast({ message: '已跳过' });
+        }
         await this.loadToday();
       } else {
         promptAction.showToast({ message: result.message });
       }
     } catch (e) {
-      promptAction.showToast({ message: '确认失败，请重试' });
+      promptAction.showToast({ message: '操作失败，请重试' });
     }
   }
 
@@ -216,10 +265,10 @@ export struct HomePage {
         // 空态
         Column() {
           Text('今天没有服药提醒')
-            .fontSize(16)
+            .fontSize(18)
             .fontColor('#999999')
           Text('去「药品」和「计划」页添加吧')
-            .fontSize(13)
+            .fontSize(14)
             .fontColor('#bbbbbb')
             .margin({ top: 8 })
         }
@@ -228,10 +277,10 @@ export struct HomePage {
         .justifyContent(FlexAlign.Center)
       } else {
         // 列表
-        List({ space: 12 }) {
+        List({ space: 14 }) {
           ForEach(this.remindList, (task: RemindTaskVO) => {
             ListItem() {
-              RemindItem({ task: task, onConfirm: () => { this.confirmTake(task); } })
+              RemindItem({ task: task, onAction: (action: string) => { this.confirmTake(task, action); } })
             }
           }, (task: RemindTaskVO) => task.id.toString() + '_' + this.refreshVersion.toString())
         }

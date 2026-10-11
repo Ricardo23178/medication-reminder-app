@@ -61,11 +61,30 @@ export struct MyPage {
         .fontColor('#999999')
         .margin({ top: 6 })
 
+      // 服药记录入口
+      Row() {
+        Text('服药记录')
+          .fontSize(16)
+          .fontColor('#333333')
+          .layoutWeight(1)
+        Text('›')
+          .fontSize(20)
+          .fontColor('#999999')
+      }
+      .width('80%')
+      .padding({ left: 16, right: 16, top: 14, bottom: 14 })
+      .margin({ top: 40 })
+      .backgroundColor('#f5f7fa')
+      .borderRadius(12)
+      .onClick(() => {
+        router.pushUrl({ url: 'pages/RecordList' });
+      })
+
       Button('退出登录')
         .fontSize(16)
         .width('80%')
         .height(48)
-        .margin({ top: 60 })
+        .margin({ top: 24 })
         .backgroundColor('#ff3b30')
         .onClick(() => {
           this.logout();

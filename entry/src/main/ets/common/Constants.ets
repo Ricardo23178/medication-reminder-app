@@ -5,7 +5,7 @@
  * 真机调试时改成电脑的局域网 IP，例如 http://192.168.x.x:8080
  */
 export class Constants {
-  static readonly BASE_URL: string = 'http://192.168.1.14:8080';
+  static readonly BASE_URL: string = 'http://10.175.105.183:8080';
   /** token 在本地存储里的 key */
   static readonly KEY_TOKEN: string = 'token';
   /** 用户昵称在本地存储里的 key */
