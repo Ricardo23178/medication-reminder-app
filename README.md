@@ -60,10 +60,16 @@ pages/
 `entry/src/main/ets/common/Constants.ets`：
 
 ```typescript
-static readonly BASE_URL: string = 'http://192.168.1.14:8080';
+static readonly BASE_URL: string = 'http://127.0.0.1:8080';
 ```
 
-> 模拟器访问宿主机后端，用局域网 IP（如 `192.168.x.x`）或 `10.0.2.2`；真机用电脑局域网 IP。
+模拟器启动后，在 PowerShell 执行端口转发，将设备的 8080 端口连接到电脑后端：
+
+```powershell
+& "C:\Program Files\Huawei\DevEco Studio\sdk\default\openharmony\toolchains\hdc.exe" rport tcp:8080 tcp:8080
+```
+
+模拟器重启或转发被清除后需重新执行。真机通过局域网调试时，将 `BASE_URL` 改为电脑当前的局域网 IP，并确保设备与电脑网络互通。
 
 ### 2. 运行
 
@@ -85,3 +91,12 @@ entry/src/main/ets/
 - **@State 状态管理**：数据变化自动刷新 UI
 - **ForEach 强制刷新**：用「版本号拼 key」的方式，解决列表项内部字段变化不重渲染的问题
 - **Tab 刷新机制**：`currentTab + refreshTick` 两个状态驱动，切 Tab 或从二级页返回时自动刷新
+
+## 当前阶段优化
+
+- 取消或超时的提醒显示明确状态，不能继续确认。
+- 提交期间禁用确认按钮，避免重复点击；“稍后”默认15分钟，仍可继续确认已服/跳过。
+- 401 登录失效时清理会话并返回登录页；旧会话的迟到响应不会清除重新登录的凭证。
+- 统计进度条按容器百分比显示，避免窄屏越界。
+
+本次使用 DevEco 自带 Hvigor 完成未签名 HAP 编译，并已安装、启动到模拟器，验证模拟器到后端的网络连通；完整交互和真机流程尚未验收。当前 DevEco 不接受中文工程路径，可复制至英文路径后编译。API 弃用警告尚存，真机签名需在 DevEco 中配置。

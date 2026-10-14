@@ -161,7 +161,7 @@ struct Statistics {
                     // 简单进度条：用一条填充的 Row 模拟
                     Row() {
                       Row()
-                        .width((d.completionRate * 1.8).toString() + 'vp')
+                        .width(Math.min(100, Math.max(0, d.completionRate)).toString() + '%')
                         .height(6)
                         .backgroundColor(this.rateColor(d.completionRate))
                         .borderRadius(3)

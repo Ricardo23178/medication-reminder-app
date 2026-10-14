@@ -30,13 +30,19 @@ export class RegisterRequest {
 
 /**
  * 确认服药请求体。action: TAKEN已服 / DELAYED稍后 / SKIPPED跳过。
- * 先只做 TAKEN，其余字段留空即可。
+ * 稍后默认15分钟；clientRequestId用于同一次请求重试时去重。
  */
 export class ConfirmRequest {
   action: string = '';
+  delayMinutes?: number;
+  clientRequestId: string = '';
 
   constructor(action: string) {
     this.action = action;
+    this.clientRequestId = Date.now().toString() + '_' + action;
+    if (action === 'DELAYED') {
+      this.delayMinutes = 15;
+    }
   }
 }
 

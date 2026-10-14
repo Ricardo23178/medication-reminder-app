@@ -14,6 +14,7 @@ import { ConfirmRequest } from '../model/Request';
 @Component
 struct RemindItem {
   @ObjectLink task: RemindTaskVO;
+  @Prop busy: boolean = false;
   onAction: (action: string) => void = () => {};
 
   /**
@@ -92,7 +93,18 @@ struct RemindItem {
         .width('100%')
         .justifyContent(FlexAlign.Center)
         .margin({ top: 14 })
+      } else if (this.task.status === 'CANCELLED' || this.task.status === 'EXPIRED') {
+        Text(this.task.status === 'CANCELLED' ? '计划已暂停或变更，此提醒已取消' : '已超时未确认')
+          .fontSize(16)
+          .fontColor('#999999')
+          .margin({ top: 14 })
       } else {
+        if (this.task.action === 'DELAYED') {
+          Text('已设为稍后，服用后请再次确认')
+            .fontSize(16)
+            .fontColor('#ff9500')
+            .margin({ top: 12 })
+        }
         Row({ space: 12 }) {
           Button('已服用')
             .fontSize(18)
@@ -123,6 +135,7 @@ struct RemindItem {
         }
         .width('100%')
         .margin({ top: 14 })
+        .enabled(!this.busy)
       }
     }
     .width('100%')
@@ -145,6 +158,7 @@ export struct HomePage {
   @State remindList: RemindTaskVO[] = [];
   @State loading: boolean = true;
   @State refreshVersion: number = 0;   // 确认后自增，强制 ForEach 重建
+  @State submitting: boolean = false;
 
   async aboutToAppear() {
     // 读昵称（只在首次读一次）
@@ -195,6 +209,10 @@ export struct HomePage {
    * @param action TAKEN / DELAYED / SKIPPED
    */
   async confirmTake(task: RemindTaskVO, action: string) {
+    if (this.submitting || task.confirmed || task.status === 'CANCELLED' || task.status === 'EXPIRED') {
+      return;
+    }
+    this.submitting = true;
     try {
       const req = new ConfirmRequest(action);
       const respStr = await HttpUtil.post('/api/reminders/' + task.id + '/confirm', req);
@@ -203,7 +221,7 @@ export struct HomePage {
         if (action === 'TAKEN') {
           promptAction.showToast({ message: '已确认服药' });
         } else if (action === 'DELAYED') {
-          promptAction.showToast({ message: '已设为稍后' });
+          promptAction.showToast({ message: '已延后15分钟，服用后请再次确认' });
         } else if (action === 'SKIPPED') {
           promptAction.showToast({ message: '已跳过' });
         }
@@ -213,6 +231,8 @@ export struct HomePage {
       }
     } catch (e) {
       promptAction.showToast({ message: '操作失败，请重试' });
+    } finally {
+      this.submitting = false;
     }
   }
 
@@ -280,7 +300,7 @@ export struct HomePage {
         List({ space: 14 }) {
           ForEach(this.remindList, (task: RemindTaskVO) => {
             ListItem() {
-              RemindItem({ task: task, onAction: (action: string) => { this.confirmTake(task, action); } })
+              RemindItem({ task: task, busy: this.submitting, onAction: (action: string) => { this.confirmTake(task, action); } })
             }
           }, (task: RemindTaskVO) => task.id.toString() + '_' + this.refreshVersion.toString())
         }

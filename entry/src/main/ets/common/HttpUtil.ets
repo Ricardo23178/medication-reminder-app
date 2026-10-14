@@ -1,6 +1,7 @@
 import { http } from '@kit.NetworkKit';
 import { preferences } from '@kit.ArkData';
 import { Constants } from './Constants';
+import { router } from '@kit.ArkUI';
 
 /**
  * 请求头对象。用 class 声明、字段写死，规避 ArkTS 下标访问限制。
@@ -18,6 +19,8 @@ class HttpHeader {
  * 3. 把响应 body 转成字符串返回（页面自己 JSON.parse）
  */
 export class HttpUtil {
+  private static redirectingToLogin: boolean = false;
+  private static sessionVersion: number = 0;
 
   /**
    * 读本地存储的 token。
@@ -36,9 +39,11 @@ export class HttpUtil {
    * 保存 token 到本地。
    */
   static async saveToken(token: string): Promise<void> {
+    HttpUtil.sessionVersion++;
     const prefs = await preferences.getPreferences(getContext(), 'medication');
     await prefs.put(Constants.KEY_TOKEN, token);
     await prefs.flush();
+    HttpUtil.redirectingToLogin = false;
   }
 
   /**
@@ -56,9 +61,12 @@ export class HttpUtil {
 
     // 先构造 header 对象（class 声明，字段写死，避免下标访问报错）
     let header = new HttpHeader();
+    let requestToken: string = '';
+    const requestSessionVersion = HttpUtil.sessionVersion;
     // 业务接口自动带 token
     if (needAuth) {
       const token = await HttpUtil.getToken();
+      requestToken = token;
       if (token !== '') {
         header.Authorization = 'Bearer ' + token;
       }
@@ -78,6 +86,21 @@ export class HttpUtil {
 
     try {
       const resp = await httpRequest.request(url, options);
+      if (needAuth && resp.responseCode === 401) {
+        const currentToken = await HttpUtil.getToken();
+        if (HttpUtil.redirectingToLogin || requestSessionVersion !== HttpUtil.sessionVersion
+          || requestToken !== currentToken) {
+          return resp.result as string;
+        }
+        HttpUtil.redirectingToLogin = true;
+        const prefs = await preferences.getPreferences(getContext(), 'medication');
+        await prefs.delete(Constants.KEY_TOKEN);
+        await prefs.delete(Constants.KEY_NICKNAME);
+        await prefs.delete(Constants.KEY_USER_ID);
+        await prefs.flush();
+        await router.replaceUrl({ url: 'pages/Login' });
+        router.clear();
+      }
       // resp.result 是后端返回的字符串
       return resp.result as string;
     } finally {
