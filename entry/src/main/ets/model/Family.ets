@@ -79,6 +79,7 @@ export class AbnormalEventVO {
   medicineName: string = '';
   scheduledAt: string = '';
   acknowledgedAt: string = '';
+  closedAt: string = '';
   createTime: string = '';
 }
 

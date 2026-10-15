@@ -21,12 +21,18 @@ import { MyPage } from './My';
 struct Main {
   @State currentTab: number = 0;
   @State refreshTick: number = 0;
+  @State pageVisible: boolean = true;
 
   /**
    * 从二级页返回时触发，刷新当前 Tab。
    */
   onPageShow() {
+    this.pageVisible = true;
     this.refreshTick++;
+  }
+
+  onPageHide() {
+    this.pageVisible = false;
   }
 
   build() {
@@ -52,7 +58,7 @@ struct Main {
       .tabBar('家属')
 
       TabContent() {
-        MyPage()
+        MyPage({ currentTab: this.currentTab, refreshTick: this.refreshTick, pageVisible: this.pageVisible })
       }
       .tabBar('我的')
     }

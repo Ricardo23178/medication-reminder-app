@@ -8,6 +8,8 @@
     "pages/PlanAdd",
     "pages/FamilyAbnormal",
     "pages/Statistics",
-    "pages/RecordList"
+    "pages/RecordList",
+    "pages/Notifications",
+    "pages/NotificationDetail"
   ]
 }
